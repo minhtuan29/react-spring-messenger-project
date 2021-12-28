@@ -2,9 +2,6 @@ package com.mercure.controller;
 
 import com.mercure.dto.AuthUserDTO;
 import com.mercure.dto.JwtDTO;
-import com.mercure.dto.LightUserDTO;
-import com.mercure.dto.UserDTO;
-import com.mercure.entity.GroupEntity;
 import com.mercure.entity.GroupUser;
 import com.mercure.entity.UserEntity;
 import com.mercure.mapper.UserMapper;
@@ -61,10 +58,10 @@ public class AuthenticationController {
         String token = jwtTokenUtil.generateToken(userDetails);
         Cookie jwtAuthToken = new Cookie(StaticVariable.SECURE_COOKIE, token);
         jwtAuthToken.setHttpOnly(true);
-        jwtAuthToken.setSecure(false);
+        jwtAuthToken.setSecure(userService.isProdProfile());
         jwtAuthToken.setPath("/");
-//        cookie.setDomain("http://localhost");
-//         7 days
+        jwtAuthToken.setDomain(userService.isProdProfile() ? "192.168.0.23" : "localhost");
+        //7 days
         jwtAuthToken.setMaxAge(7 * 24 * 60 * 60);
         response.addCookie(jwtAuthToken);
         return userMapper.toLightUserDTO(user);

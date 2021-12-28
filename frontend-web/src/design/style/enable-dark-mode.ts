@@ -6,6 +6,10 @@ export const generateIconColorMode = (isDarkMode: string) => {
     return isDarkMode === "dark" ? "#dcdcdc" : "#4A4A4A";
 }
 
+export const generateBackgroundColor = (isDarkMode: string) => {
+    return isDarkMode === "dark" ? "#dcdcdc" : "#2f2f2f";
+}
+
 export const generateInputTextColorMode = (isDarkMode: string) => {
     return isDarkMode === "dark" ? "white" : "black"
 }

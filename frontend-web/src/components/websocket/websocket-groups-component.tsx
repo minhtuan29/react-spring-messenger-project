@@ -11,7 +11,7 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import Avatar from "@material-ui/core/Avatar";
 import {TypeGroupEnum} from "../../utils/type-group-enum";
-import FolderIcon from "@material-ui/icons/Folder";
+import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import ListItemText from "@material-ui/core/ListItemText";
 import {useHistory} from "react-router-dom";
@@ -152,7 +152,7 @@ export const WebsocketGroupsComponent: React.FunctionComponent<WebsocketGroupsCo
                         <Avatar>
                             {
                                 data.groupType === TypeGroupEnum.GROUP ?
-                                    <FolderIcon/>
+                                    <QuestionAnswerIcon/>
                                     :
                                     <AccountCircleIcon/>
                             }

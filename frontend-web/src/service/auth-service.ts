@@ -1,8 +1,8 @@
 import axios from 'axios';
 import JwtModel from "../model/jwt-model";
+import {config} from "../config/config";
 
-// const API_URL = process.env.NODE_ENV === "development" ? 'http://localhost:9090/api/' : "http://192.168.1.2:9090/api/";
-const API_URL = process.env.NODE_ENV === "development" ? 'http://localhost:9090/api/' : "https://localhost:9090/api/";
+const API_URL = `${config.HTTP_TRANSPORT}://${config.HOST_URL}:${config.HOST_PORT}/api`
 
 const instance = axios.create({
     withCredentials: true,
@@ -13,39 +13,39 @@ export default class AuthService {
 
     authenticate(username: string, password: string) {
         const toSend = new JwtModel(username, password);
-        return instance.post("auth", toSend);
+        return instance.post("/auth", toSend);
     }
 
     async testRoute() {
-        return await instance.get("fetch");
+        return await instance.get("/fetch");
     }
 
     logout() {
-        return instance.get("logout");
+        return instance.get("/logout");
     }
 
     createGroup(groupName: string) {
-        return instance.post("create", {name: groupName})
+        return instance.post("/create", {name: groupName})
     }
 
     fetchMessages(id: number) {
-        return instance.post(API_URL + "fetchMessages", {id: id})
+        return instance.post(API_URL + "/fetchMessages", {id: id})
     }
 
     addUserToGroup(userId: number | string, groupUrl: string) {
-        return instance.get(API_URL + "user/add/" + userId + "/" + groupUrl)
+        return instance.get(API_URL + "/user/add/" + userId + "/" + groupUrl)
     }
 
     fetchAllUsersInConversation(groupUrl: string) {
-        return instance.get(API_URL + "users/group/" + groupUrl, {})
+        return instance.get(API_URL + "/users/group/" + groupUrl, {})
     }
 
     fetchAllUsersWithoutAlreadyInGroup(groupUrl: string) {
-        return instance.get(API_URL + "users/all/" + groupUrl, {})
+        return instance.get(API_URL + "/users/all/" + groupUrl, {})
     }
 
     createUser(firstname: string, lastname: string, email: string, password: string) {
-        return instance.post(API_URL + "user/register", {
+        return instance.post(API_URL + "/user/register", {
             firstname: firstname,
             lastname: lastname,
             email: email,
@@ -54,19 +54,19 @@ export default class AuthService {
     }
 
     leaveConversation(userIdToRemove: number, groupId: string) {
-        return instance.get(API_URL + "user/leave/" + userIdToRemove + "/group/" + groupId);
+        return instance.get(API_URL + "/user/leave/" + userIdToRemove + "/group/" + groupId);
     }
 
     removeUserFromConversation(userIdToRemove: string | number, groupUrl: string) {
-        return instance.get(API_URL + "user/remove/" + userIdToRemove + "/group/" + groupUrl);
+        return instance.get(API_URL + "/user/remove/" + userIdToRemove + "/group/" + groupUrl);
     }
 
     removeAdminUserInConversation(userIdToRemove: string | number, groupUrl: string) {
-        return instance.get(API_URL + "user/remove/admin/" + userIdToRemove + "/group/" + groupUrl);
+        return instance.get(API_URL + "/user/remove/admin/" + userIdToRemove + "/group/" + groupUrl);
     }
 
     grantUserAdminInConversation(userIdToGrant: number | string, groupId: string) {
-        return instance.get(API_URL + "user/grant/" + userIdToGrant + "/group/" + groupId);
+        return instance.get(API_URL + "/user/grant/" + userIdToGrant + "/group/" + groupId);
     }
 
     uploadFile(data: FormData) {

@@ -1,20 +1,20 @@
 package com.mercure.controller;
 
 import com.mercure.dto.*;
+import com.mercure.entity.CallEntity;
 import com.mercure.entity.MessageEntity;
 import com.mercure.entity.MessageUserEntity;
 import com.mercure.service.*;
-import com.mercure.utils.*;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import com.mercure.utils.ComparatorListGroupDTO;
+import com.mercure.utils.JwtUtil;
+import com.mercure.utils.MessageTypeEnum;
+import com.mercure.utils.TransportActionEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.handler.annotation.*;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +52,9 @@ public class WsController {
     @Autowired
     private UserSeenMessageService seenMessageService;
 
+    @Autowired
+    private CallService callService;
+
     @GetMapping
     public String testRoute(HttpServletRequest request) {
         String requestTokenHeader = request.getHeader("authorization");
@@ -74,7 +77,17 @@ public class WsController {
                 this.messagingTemplate.convertAndSend("/topic/user/" + dto.getUserId(), response);
                 break;
             case SEND_GROUP_MESSAGE:
-                this.getAndSaveMessage(dto.getUserId(), dto.getGroupUrl(), dto.getMessage());
+                this.getAndSaveMessage(dto.getUserId(), dto.getGroupUrl(), dto.getMessage(), dto.getMessageType());
+                break;
+            case EDIT_GROUP_MESSAGE:
+                OutputTransportDTO editedMessage = new OutputTransportDTO();
+                userService.checkIfUserIsAdmin(dto.getUserId(), dto.getUserId());
+                messageService.editAndSaveMessage(dto.getMessageId(), dto.getMessage());
+                //TODO check user rights
+                editedMessage.setAction(TransportActionEnum.EDIT_GROUP_MESSAGE);
+                MessageDTO messageDTO = new MessageDTO();
+                editedMessage.setObject(messageDTO);
+                this.messagingTemplate.convertAndSend("/topic/user/" + dto.getUserId(), "dsq");
                 break;
             case FETCH_GROUP_MESSAGES:
                 if (!dto.getGroupUrl().equals("")) {
@@ -135,52 +148,40 @@ public class WsController {
      * @param groupUrl the string groupUrl for mapping message to a group
      * @param message  the payload received
      */
-    public void getAndSaveMessage(int userId, String groupUrl, String message) {
+    public void getAndSaveMessage(int userId, String groupUrl, String message, MessageTypeEnum type) {
         int groupId = groupService.findGroupByUrl(groupUrl);
+        String firstName = userService.findFirstNameById(userId);
         if (groupUserJoinService.checkIfUserIsAuthorizedInGroup(userId, groupId)) {
             return;
         }
-        MessageEntity messageEntity = new MessageEntity(userId, groupId, MessageTypeEnum.TEXT.toString(), message);
+        List<Integer> toSend = messageService.createNotificationList(groupUrl);
+        String messageToSave = type.equals(MessageTypeEnum.VIDEO) ? firstName + " started a video call" : message;
+        MessageEntity messageEntity = new MessageEntity(userId, groupId, type.toString(), messageToSave);
         MessageEntity msg = messageService.save(messageEntity);
-        List<Integer> toSend = messageService.createNotificationList(userId, groupUrl);
 
         // Save seen message
         seenMessageService.saveMessageNotSeen(msg, groupId);
 
+        if (msg.getType().equals(MessageTypeEnum.VIDEO.toString())) {
+            String groupName = groupService.getGroupName(groupUrl);
+            OutputTransportDTO videoCall = new OutputTransportDTO();
+            videoCall.setAction(TransportActionEnum.INIT_VIDEO_CALL);
+            videoCall.setObject(new VideoCallDTO(userId, groupName, firstName, message));
+            CallEntity callEntity = new CallEntity();
+            callEntity.setUrl(groupUrl);
+            callEntity.setInitiator(msg.getUser_id());
+
+            callService.save(callEntity);
+            toSend.forEach(toUserId -> messagingTemplate.convertAndSend("/topic/user/" + toUserId, videoCall));
+        }
+
         OutputTransportDTO dto = new OutputTransportDTO();
         dto.setAction(TransportActionEnum.NOTIFICATION_MESSAGE);
         toSend.forEach(toUserId -> {
-            MessageDTO messageDTO = messageService.createNotificationMessageDTO(msg, toUserId);
+            MessageDTO messageDTO = messageService.createNotificationMessageDTO(msg, toUserId, firstName);
             dto.setObject(messageDTO);
             messagingTemplate.convertAndSend("/topic/user/" + toUserId, dto);
         });
-    }
-
-    @MessageMapping("/message/call/{userId}/group/{groupUrl}")
-    @SendTo("/topic/call/reply/{groupUrl}")
-    public String wsCallMessageMapping(@DestinationVariable int userId, String req) throws ParseException {
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject = (JSONObject) jsonParser.parse(req);
-        log.info("Receiving RTC data, sending back to user ...");
-        JSONObject json = new JSONObject();
-        try {
-            json.put("userIn", userId);
-            json.put("rtc", jsonObject);
-        } catch (Exception e) {
-            log.info(String.valueOf(json));
-            log.info("Error during JSON creation : {}", e.getMessage());
-        }
-        return req;
-    }
-
-    @MessageMapping("/groups/create/single")
-    @SendToUser("/queue/reply")
-    public void wsCreateConversation(String req) throws ParseException {
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject = (JSONObject) jsonParser.parse(req);
-        Long id1 = (Long) jsonObject.get("id1");
-        Long id2 = (Long) jsonObject.get("id2");
-        groupService.createConversation(id1.intValue(), id2.intValue());
     }
 
     /**

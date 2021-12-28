@@ -1,9 +1,7 @@
 package com.mercure.controller;
 
-import com.mercure.dto.MessageDTO;
 import com.mercure.dto.NotificationDTO;
 import com.mercure.dto.OutputTransportDTO;
-import com.mercure.entity.FileEntity;
 import com.mercure.entity.MessageEntity;
 import com.mercure.service.GroupService;
 import com.mercure.service.MessageService;
@@ -11,7 +9,6 @@ import com.mercure.service.StorageService;
 import com.mercure.service.UserSeenMessageService;
 import com.mercure.utils.MessageTypeEnum;
 import com.mercure.utils.TransportActionEnum;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +64,7 @@ public class WsFileController {
             res.setAction(TransportActionEnum.NOTIFICATION_MESSAGE);
             res.setObject(notificationDTO);
             seenMessageService.saveMessageNotSeen(messageEntity, groupId);
-            List<Integer> toSend = messageService.createNotificationList(userId, groupUrl);
+            List<Integer> toSend = messageService.createNotificationList(groupUrl);
             toSend.forEach(toUserId -> messagingTemplate.convertAndSend("/topic/user/" + toUserId, res));
         } catch (Exception e) {
             log.error("Cannot save file, caused by {}", e.getMessage());

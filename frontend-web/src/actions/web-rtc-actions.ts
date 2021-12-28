@@ -1,42 +1,21 @@
 import {
-    HANDLE_RTC_ACTIONS,
-    HANDLE_RTC_ANSWER,
-    HANDLE_RTC_CANDIDATE,
-    HANDLE_RTC_OFFER, SEND_TO_SERVER, SET_RTC_ANSWER,
-    SET_RTC_OFFER
+    SEND_RTC_MESSAGE, SET_CURRENT_CALL, SET_INCOMING_CALL
 } from "../utils/redux-constants";
+import {VideoCallModel} from "../model/video-call-model";
+import {RTCModel} from "../model/RTCModel";
 
-export const initCallWebRTC = (data: any) => ({
-    type: HANDLE_RTC_ACTIONS,
-    payload: data
+
+export const setIncomingCall = (model: VideoCallModel | null) => ({
+    type: SET_INCOMING_CALL,
+    payload: model
 })
 
-export const createOffer = (data: any) => ({
-    type: HANDLE_RTC_OFFER,
-    payload: data
+export const addToCurrentCalls = (groupUrl: string) => ({
+    type: SET_CURRENT_CALL,
+    payload: groupUrl
 })
 
-export const createAnswer = (data: any) => ({
-    type: HANDLE_RTC_ANSWER,
-    payload: data
-})
-
-export const handleOffer = (data: any) => ({
-    type: SET_RTC_OFFER,
-    payload: data
-})
-
-export const handleAnswer = (data: any) => ({
-    type: SET_RTC_ANSWER,
-    payload: data
-})
-
-export const sendToServer = (data: any) => ({
-    type: SEND_TO_SERVER,
-    payload: data
-})
-
-export const handleRtCandidate = (data: any) => ({
-    type: HANDLE_RTC_CANDIDATE,
-    payload: data
+export const sendRTCMessage = (model: RTCModel) => ({
+    type: SEND_RTC_MESSAGE,
+    payload: model
 })

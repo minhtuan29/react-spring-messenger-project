@@ -10,7 +10,7 @@ export const ThemeContext = React.createContext<ThemeContextType>(
 
 export const ThemeProvider: React.FC = ({children}) => {
     const [cookies] = useCookies(['pref-theme']);
-    const [theme, setTheme] = useState<Theme>(cookies["pref-theme"] ? cookies["pref-theme"] : "light");
+    const [theme, setTheme] = useState<Theme>(cookies["pref-theme"] ? cookies["pref-theme"] : "dark");
     const toggleTheme = () => {
         setTheme(theme === "light" ? "dark" : "light");
     };

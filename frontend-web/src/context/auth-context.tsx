@@ -18,7 +18,6 @@ export const AuthContextProvider: React.FunctionComponent = ({children}) => {
             const res: AxiosResponse<UserModel> = await new AuthService().testRoute();
             setUser(res.data);
         }
-
         authInit();
     }, [])
 

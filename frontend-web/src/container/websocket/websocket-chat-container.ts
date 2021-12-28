@@ -24,7 +24,7 @@ const mapStateToProps = (state: any) => {
         chatHistory,
         wsUserGroups,
         wsObject,
-        isWsConnected,
+        isWsConnected
     };
 }
 

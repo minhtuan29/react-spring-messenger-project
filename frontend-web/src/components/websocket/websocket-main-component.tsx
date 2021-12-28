@@ -49,17 +49,25 @@ export const WebSocketMainComponent: React.FunctionComponent<WebsocketMainCompon
     }
 
     async function initWs() {
-        const wsClient = await initWebSocket(user?.wsToken);
-        const toSend = new ReduxModel(wsClient, user?.wsToken, undefined, user?.id);
-        setWsObject(toSend);
+        if (user?.wsToken) {
+            const wsClient = await initWebSocket(user.wsToken);
+            const toSend = new ReduxModel(wsClient, user?.wsToken, undefined, user?.id);
+            setWsObject(toSend);
+        }
     }
 
     return (
         <div className={generateColorMode(theme)}
              style={{height: "calc(100% - 64px)", display: "flex", justifyContent: "space-between"}}>
-            <WebSocketGroupsContainer setGroupName={setGroupNameValue}/>
+            {
+                window.innerWidth > 380 &&
+                <WebSocketGroupsContainer setGroupName={setGroupNameValue}/>
+            }
             <WebSocketChatContainer groupName={groupName}/>
-            <WebSocketGroupsActionContainer/>
+            {
+                window.innerWidth > 380 &&
+                <WebSocketGroupsActionContainer/>
+            }
         </div>
     )
 }

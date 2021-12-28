@@ -1,6 +1,7 @@
 .idea/**
 /frontend-web/build/
 /frontend-web/.idea/**
+/frontend-web/startup.sh
 /backend/src/main/resources/public/images/
 livraison.sh
 /backend/uploads/

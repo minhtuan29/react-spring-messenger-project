@@ -1,24 +1,21 @@
 import {
     FETCH_GROUP_MESSAGES,
     GRANT_USER_ADMIN,
-    HANDLE_RTC_ACTIONS,
-    HANDLE_RTC_ANSWER,
-    HANDLE_RTC_OFFER,
     INIT_WS_CONNECTION,
     MARK_MESSAGE_AS_SEEN,
     SEND_GROUP_MESSAGE,
-    SEND_TO_SERVER,
+    SEND_RTC_MESSAGE,
     SET_WS_GROUPS,
     UNSUBSCRIBE_ALL,
 } from "../utils/redux-constants";
 import {
-    addChatHistory, setAllMessagesFetched,
+    addChatHistory,
+    setAllMessagesFetched,
     setCurrentActiveGroup,
     setGroupMessages,
     setWsUserGroups,
     wsHealthCheckConnected
 } from "../actions/websocket-actions";
-import {handleRTCActions} from "./webRTC-middleware";
 import {Client, IMessage, StompSubscription} from "@stomp/stompjs";
 import {ReduxModel} from "../model/redux-model";
 import {Dispatch, Store} from "redux";
@@ -30,6 +27,10 @@ import {OutputTransportDTO} from "../model/input-transport-model";
 import {playNotificationSound} from "../config/play-sound-notification";
 import {getPayloadSize} from "../utils/string-size-calculator";
 import {WrapperMessageModel} from "../model/wrapper-message-model";
+import {TypeMessageEnum} from "../utils/type-message-enum";
+import {setIncomingCall} from "../actions/web-rtc-actions";
+import {VideoCallModel} from "../model/video-call-model";
+import {RTCModel} from "../model/RTCModel";
 
 let mainSubscribe: StompSubscription;
 
@@ -69,8 +70,14 @@ function initWsAndSubscribe(wsClient: Client, store: Store, reduxModel: ReduxMod
                         store.dispatch(setCurrentActiveGroup(message.groupUrl));
                         updateGroupsWithLastMessageSent(store, message, userId || 0);
                         store.dispatch(addChatHistory(message))
-                        if (message.userId !== userId) {
+                        if (message.userId !== userId && message.type !== TypeMessageEnum.VIDEO) {
                             playNotificationSound();
+                        }
+                        break;
+                    case TransportActionEnum.INIT_VIDEO_CALL:
+                        const videoCallObject = data.object as VideoCallModel;
+                        if (videoCallObject.userId !== userId) {
+                            store.dispatch(setIncomingCall(videoCallObject))
                         }
                         break;
                     default:
@@ -97,6 +104,15 @@ function publishWs(wsClient: Client, transportModel: TransportModel) {
     }
 }
 
+function publishOnRtcChannel(wsClient: Client, rtcModel: RTCModel) {
+    if (wsClient && wsClient.active) {
+        wsClient.publish({
+            destination: "/app/rtc",
+            body: JSON.stringify(rtcModel)
+        });
+    }
+}
+
 const WsClientMiddleWare = () => {
     let wsClient: Client;
 
@@ -111,13 +127,12 @@ const WsClientMiddleWare = () => {
                 initWsAndSubscribe(wsClient, store, action.payload);
                 break;
             case FETCH_GROUP_MESSAGES:
-                // store.dispatch(setGroupMessages([]));
                 publishWs(wsClient, new TransportModel(model.userId || 0, TransportActionEnum.FETCH_GROUP_MESSAGES, undefined, model.groupUrl, undefined, model.messageId))
                 break;
             case SEND_GROUP_MESSAGE:
                 //TODO send back alert to UI
                 if (getPayloadSize(model.message!) < 8192) {
-                    publishWs(wsClient, new TransportModel(model.userId || 0, TransportActionEnum.SEND_GROUP_MESSAGE, undefined, model.groupUrl, model.message));
+                    publishWs(wsClient, new TransportModel(model.userId || 0, TransportActionEnum.SEND_GROUP_MESSAGE, undefined, model.groupUrl, model.message, undefined, model.messageType));
                 }
                 break;
             case MARK_MESSAGE_AS_SEEN:
@@ -125,25 +140,16 @@ const WsClientMiddleWare = () => {
                 publishWs(wsClient, new TransportModel(model.userId || 0, TransportActionEnum.MARK_MESSAGE_AS_SEEN, undefined, model.groupUrl))
                 break;
             case UNSUBSCRIBE_ALL:
-                console.log(`unsubscribe mainSubscribe with value ! ${mainSubscribe}`)
                 if (mainSubscribe) {
+                    console.log(`unsubscribe mainSubscribe with value ! ${mainSubscribe}`)
                     mainSubscribe.unsubscribe();
                 }
                 break;
-            case HANDLE_RTC_ACTIONS:
-                handleRTCActions(wsClient, store, action.payload);
-                break;
-            case HANDLE_RTC_OFFER:
-                handleRTCActions(wsClient, store, action.payload);
-                break;
-            case HANDLE_RTC_ANSWER:
-                handleRTCActions(wsClient, store, action.payload);
-                break;
-            case SEND_TO_SERVER:
-                handleRTCActions(wsClient, store, action.payload);
-                break;
             case GRANT_USER_ADMIN:
                 publishWs(wsClient, new TransportModel(model.userId || 0, TransportActionEnum.GRANT_USER_ADMIN, model.userToken, model.groupUrl))
+                break;
+            case SEND_RTC_MESSAGE:
+                publishOnRtcChannel(wsClient, new RTCModel(TransportActionEnum.ACCEPT_VIDEO_CALL, model.userId || 0, model.groupUrl || ""));
                 break;
             default:
                 console.log(`Unhandled action : ${action.type}`);

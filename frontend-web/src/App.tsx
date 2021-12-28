@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import './App.css';
 import {createBrowserHistory} from 'history';
 import {
@@ -15,12 +15,17 @@ import WebSocketMainContainer from "./container/websocket/websocket-main-contain
 import {AlertComponent} from "./design/utils/alert-component";
 import {LinearProgress} from "@material-ui/core";
 import {useLoaderContext} from "./context/loader-context";
-
+import {VideoCallComponent} from "./components/webrtc/video-call-component";
+import {BottomNavigationComponent} from "./components/navigation/bottom-navigation";
 
 const history = createBrowserHistory();
 
 export const App = () => {
     const {loading} = useLoaderContext();
+
+    useEffect(() => {
+        console.log(window.innerWidth);
+    }, [window.innerWidth])
 
     return (
         <Router>
@@ -63,7 +68,15 @@ export const App = () => {
                         history={history}
                     />}
                 />
+                <Route exact path="/call/:id" render={() =>
+                    <VideoCallComponent/>
+                }
+                />
             </Switch>
+            {
+                window.innerWidth < 380 &&
+                <BottomNavigationComponent/>
+            }
             <AlertComponent/>
         </Router>
     )

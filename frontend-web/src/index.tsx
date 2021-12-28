@@ -13,6 +13,7 @@ import {ThemeProvider} from "./context/theme-context";
 import {AlertContextProvider} from "./context/alert-context";
 import {LoaderProvider} from "./context/loader-context";
 
+require('dotenv').config()
 
 // @ts-ignore
 const store = createStore(rootReducer, applyMiddleware(thunk, WsClientMiddleWare))

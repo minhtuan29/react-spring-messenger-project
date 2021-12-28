@@ -14,12 +14,15 @@ export class TransportModel {
 
     private messageId: number | undefined;
 
-    constructor(userId: number, action: TransportActionEnum, wsToken?: string, groupUrl?: string, message?: string, messageId?: number) {
+    private messageType: string | undefined;
+
+    constructor(userId: number, action: TransportActionEnum, wsToken?: string, groupUrl?: string, message?: string, messageId?: number, messageType?: string) {
         this.userId = userId;
         this.action = action;
         this.wsToken = wsToken;
         this.groupUrl = groupUrl;
         this.message = message;
         this.messageId = messageId;
+        this.messageType = messageType;
     }
 }

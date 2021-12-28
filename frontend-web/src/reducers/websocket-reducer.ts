@@ -5,7 +5,7 @@ import {
     SET_WS_GROUPS,
     WS_CHECK_CONNECTED
 } from "../utils/redux-constants";
-import {WsReducerInitType} from "./types";
+import {ReducerType, WsReducerInitType} from "./types";
 
 
 const initialState: WsReducerInitType = {
@@ -19,7 +19,7 @@ const initialState: WsReducerInitType = {
     chatHistory: []
 }
 
-const WebSocketReducer = (state = initialState, action: any) => {
+const WebSocketReducer = (state = initialState, action: ReducerType) => {
     switch (action.type) {
         case INIT_WS_TOKEN:
             return {...state, wsUserTokenValue: action.payload};

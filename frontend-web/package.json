@@ -14,6 +14,8 @@
     "@types/react-redux": "^7.1.18",
     "@types/react-router-dom": "^5.1.8",
     "axios": "^0.21.1",
+    "cross-env": "^7.0.3",
+    "dotenv": "^10.0.0",
     "history": "^5.0.0",
     "moment": "^2.29.1",
     "react": "^17.0.2",
@@ -31,11 +33,11 @@
   },
   "scripts": {
     "start": "tsc && react-scripts start",
+    "start:rasp": "cross-env REACT_APP_ENV=test npm run start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:9090",
   "eslintConfig": {
     "extends": "react-app"
   },

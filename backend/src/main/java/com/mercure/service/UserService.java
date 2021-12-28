@@ -8,6 +8,7 @@ import com.mercure.entity.UserEntity;
 import com.mercure.mapper.UserMapper;
 import com.mercure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,9 @@ public class UserService {
 
     @Autowired
     private GroupUserJoinService groupUserJoinService;
+
+    @Autowired
+    private Environment environment;
 
     private Map<Integer, String> wsSessions = new HashMap<>();
 
@@ -70,6 +74,10 @@ public class UserService {
 
     public int findUserIdWithToken(String token) {
         return userRepository.getUserIdWithWsToken(token);
+    }
+
+    public boolean isProdProfile() {
+        return Arrays.asList(this.environment.getActiveProfiles()).contains("prod");
     }
 
     public UserEntity findByNameOrEmail(String str0, String str1) {

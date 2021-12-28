@@ -14,12 +14,15 @@ export class ReduxModel {
 
     public messageId: number | undefined
 
-    constructor(client?: Client, userToken?: string, groupUrl?: string, userId?: number, message?: string, messageId?: number) {
+    public messageType: string | undefined
+
+    constructor(client?: Client, userToken?: string, groupUrl?: string, userId?: number, message?: string, messageId?: number, messageType?: string) {
         this.client = client;
         this.userToken = userToken;
         this.groupUrl = groupUrl;
         this.userId = userId;
         this.message = message;
         this.messageId = messageId;
+        this.messageType = messageType;
     }
 }

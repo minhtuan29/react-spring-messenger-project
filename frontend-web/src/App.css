@@ -27,6 +27,7 @@ body {
 .msg {
     white-space: pre-wrap;
     padding: 2px 0 2px 5px;
+    min-height: 48px;
 }
 
 .bold-unread-message-light {
@@ -94,3 +95,18 @@ body {
 .jsLink {
     color: white;
 }
+
+
+/************ RESPONSIVE ******************************************************************************/
+.bottom-nav {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+}
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+    .bottom-nav {
+        display: block;
+    }
+}
+

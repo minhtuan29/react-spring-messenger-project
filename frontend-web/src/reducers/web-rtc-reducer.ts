@@ -1,19 +1,26 @@
-import {HANDLE_RTC_CANDIDATE, SET_RTC_ANSWER, SET_RTC_OFFER} from "../utils/redux-constants";
+import {
+    SET_CURRENT_CALL,
+    SET_INCOMING_CALL, START_VIDEO_CALL,
+} from "../utils/redux-constants";
+import {ReducerType, WebRTCReducerInitType} from "./types";
 
-const initialState = {
-    webRtcOffer: null,
-    webRtcAnswer: null,
-    webRtcCandidate: null
+const initialState: WebRTCReducerInitType = {
+    callIncoming: null,
+    currentCalls: [],
+    callResponse: ""
 }
 
-const WebRTCReducer = (state = initialState, action: any) => {
+const WebRTCReducer = (state = initialState, action: ReducerType) => {
     switch (action.type) {
-        case HANDLE_RTC_CANDIDATE:
-            return {...state, webRtcCandidate: action.payload}
-        case SET_RTC_OFFER:
-            return {...state, webRtcOffer: action.payload}
-        case SET_RTC_ANSWER:
-            return {...state, webRtcAnswer: action.payload}
+        case SET_INCOMING_CALL:
+            return {...state, callIncoming: action.payload}
+        case SET_CURRENT_CALL:
+            return {
+                ...state,
+                currentCalls: [...state.currentCalls, action.payload]
+            }
+        case START_VIDEO_CALL:
+            return {...state, callResponse: action.payload}
         default:
             return state;
     }

@@ -21,15 +21,16 @@ import {useLoaderContext} from "../../context/loader-context";
 import {useAlertContext} from "../../context/alert-context";
 import {FeedbackModel} from "../../model/feedback-model";
 import UUIDv4 from "../../utils/uuid-generator";
+import PhoneCallbackIcon from '@material-ui/icons/PhoneCallback';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import {generateBackgroundColor, generateColorMode, generateIconColorMode} from "../../design/style/enable-dark-mode";
+import RtcVideoContainer from "../../container/webrtc/rtc-video-container";
 
 interface WebsocketChatComponentType {
-    getGroupMessages: (model: ReduxModel) => {},
-    currentActiveGroup: () => {},
     sendWsMessage: (model: ReduxModel) => {},
     markMessageAsSeen: (model: ReduxModel) => {},
     fetchMessages: (model: ReduxModel) => {},
     chatHistory: FullMessageModel[],
-    wsUserGroups: GroupModel[],
     allMessagesFetched: boolean,
     isWsConnected: boolean,
     groupName: string
@@ -37,13 +38,10 @@ interface WebsocketChatComponentType {
 
 export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatComponentType> = ({
                                                                                                 allMessagesFetched,
-                                                                                                getGroupMessages,
-                                                                                                currentActiveGroup,
                                                                                                 sendWsMessage,
                                                                                                 markMessageAsSeen,
                                                                                                 fetchMessages,
                                                                                                 chatHistory,
-                                                                                                wsUserGroups,
                                                                                                 isWsConnected,
                                                                                                 groupName
                                                                                             }) => {
@@ -52,6 +50,7 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
     const {setLoading} = useLoaderContext();
     const {alerts, setAlerts} = useAlertContext();
     const [isPreviewImageOpen, setPreviewImageOpen] = React.useState(false);
+    const [handleMessageAction, setMessageAction] = React.useState<number | null>(null);
 
     const [lastMessageId, setLastMessageId] = React.useState(0);
     const [loadingOldMessages, setLoadingOldMessages] = React.useState<boolean>(false);
@@ -89,18 +88,47 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
         return theme === "dark" ? "hover-msg-dark" : "hover-msg-light";
     }
 
-    function generateImageRender(message: FullMessageModel) {
-        if (message.fileUrl === undefined) {
-            return null;
+    function generateMessageRender(messageModel: FullMessageModel) {
+        switch (messageModel.type) {
+            case TypeMessageEnum.TEXT:
+                return (<div style={{overflowWrap: "break-word"}}>
+                    {messageModel.message}
+                </div>)
+            case TypeMessageEnum.FILE:
+                if (messageModel.fileUrl === undefined) {
+                    return null;
+                }
+                return (
+                    <div>
+                        <img src={messageModel.fileUrl} height={"200px"} alt={messageModel.name}
+                             onClick={() => handleImagePreview(GroupActionEnum.OPEN, messageModel.fileUrl)}
+                             style={{border: "1px solid #c8c8c8", borderRadius: "7%"}}/>
+                    </div>
+                )
+            case TypeMessageEnum.VIDEO:
+                return (
+                    <div style={{
+                        border: `1px solid ${generateBackgroundColor(theme)}`,
+                        minHeight: "50px",
+                        minWidth: "100",
+                        padding: "10px",
+                        borderRadius: "5px"
+                    }}>
+                        <div style={{display: "flex", flexDirection: "column"}}>
+                            <div>
+                                {messageModel.message}
+                            </div>
+                            <div>
+                                <PhoneCallbackIcon/>
+                            </div>
+                        </div>
+                    </div>
+                )
+            default:
+                break;
         }
-        return (
-            <div>
-                <img src={message.fileUrl} height={"200px"} alt={message.name}
-                     onClick={() => handleImagePreview(GroupActionEnum.OPEN, message.fileUrl)}
-                     style={{border: "1px solid #c8c8c8", borderRadius: "7%"}}/>
-            </div>
-        )
     }
+
 
     function resetImageBuffer(event: any) {
         event.preventDefault();
@@ -146,7 +174,7 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
             console.warn("userId is null !")
         }
         if (message !== "") {
-            const reduxModel = new ReduxModel(undefined, undefined, groupUrl || "", user?.id as number, message)
+            const reduxModel = new ReduxModel(undefined, undefined, groupUrl || "", user?.id as number, message, undefined, TypeMessageEnum.TEXT)
             sendWsMessage(reduxModel)
             setMessage("")
         }
@@ -204,7 +232,7 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
     }
 
     return (
-        <div style={{display: "flex", flex: "1", flexDirection: "column", maxWidth: "45%"}}>
+        <div style={{display: "flex", flex: "1", flexDirection: "column"}}>
             <div style={{
                 width: "100%",
                 height: "50px",
@@ -250,7 +278,9 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
                         leaveDelay={0}
                         title={new Date(val.time).getHours() + ":" + new Date(val.time).getMinutes()}
                         placement="left">
-                        <div className={'msg ' + styleSelectedMessage()} key={index}
+                        <div key={index}
+                             onMouseEnter={() => setMessageAction(index)}
+                             className={'msg ' + styleSelectedMessage()}
                              style={{display: "flex"}}>
                             {index >= 1 && array[index - 1].userId === array[index].userId ?
                                 <div style={{
@@ -284,14 +314,16 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
                                     </div>
                                 }
                                 {
-                                    val.type === TypeMessageEnum.TEXT ?
-                                        <div style={{overflowWrap: "break-word"}}>
-                                            {val.message}
-                                        </div>
-                                        :
-                                        <div>
-                                            {generateImageRender(val)}
-                                        </div>
+                                    generateMessageRender(val)
+                                }
+                            </div>
+                            <div style={{display: "flex", marginLeft: "auto"}}>
+                                {
+                                    handleMessageAction === index ?
+                                        <IconButton>
+                                            <MoreVertIcon style={{color: generateIconColorMode(theme)}}/>
+                                        </IconButton>
+                                        : <span/>
                                 }
                             </div>
                         </div>
@@ -345,13 +377,9 @@ export const WebSocketChatComponent: React.FunctionComponent<WebsocketChatCompon
                         type="file"
                         onChange={event => previewFile(event)}
                     />
-                    {/*<Button onClick={event => openCallPage(event)} variant="text" component="span">*/}
-                    {/*    <CallIcon/>*/}
-                    {/*</Button>*/}
-                    {/*<Button onClick={event => openCallPage(event)} variant="text" component="span">*/}
-                    {/*    <AcUnitIcon/>*/}
-                    {/*</Button>*/}
-                    {/*<CallWindowContainer/>*/}
+                    <RtcVideoContainer
+                        groupUrl={groupUrl}
+                        groupName={groupName}/>
                     <label htmlFor="raised-button-file">
                         <Button variant="text" component="span">
                             <ImageIcon/>

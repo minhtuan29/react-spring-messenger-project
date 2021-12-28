@@ -104,7 +104,7 @@ public class MessageService {
     }
 
     @Transactional
-    public List<Integer> createNotificationList(int userId, String groupUrl) {
+    public List<Integer> createNotificationList(String groupUrl) {
         int groupId = groupService.findGroupByUrl(groupUrl);
         List<Integer> toSend = new ArrayList<>();
         Optional<GroupEntity> optionalGroupEntity = groupService.findById(groupId);
@@ -138,14 +138,13 @@ public class MessageService {
         return notificationDTO;
     }
 
-    public MessageDTO createNotificationMessageDTO(MessageEntity msg, int userId) {
+    public MessageDTO createNotificationMessageDTO(MessageEntity msg, int userId, String firstName) {
         String groupUrl = groupService.getGroupUrlById(msg.getGroup_id());
-        String firstName = userService.findFirstNameById(msg.getUser_id());
         String initials = userService.findUsernameById(msg.getUser_id());
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setId(msg.getId());
-        messageDTO.setType(MessageTypeEnum.TEXT.toString());
-        messageDTO.setMessage(msg.getMessage());
+        messageDTO.setType(msg.getType());
+        messageDTO.setMessage(msg.getType().equals(MessageTypeEnum.VIDEO.toString()) ? firstName + " started a video call" : msg.getMessage());
         messageDTO.setUserId(msg.getUser_id());
         messageDTO.setGroupUrl(groupUrl);
         messageDTO.setGroupId(msg.getGroup_id());
@@ -155,5 +154,11 @@ public class MessageService {
         messageDTO.setColor(colors.get(msg.getUser_id()));
         messageDTO.setMessageSeen(msg.getUser_id() == userId);
         return messageDTO;
+    }
+
+    public void editAndSaveMessage(int messageId, String newTextMessage) {
+        MessageEntity msgToUpdate = messageRepository.getOne(messageId);
+        msgToUpdate.setMessage(newTextMessage);
+        messageRepository.save(msgToUpdate);
     }
 }
